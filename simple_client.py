@@ -4,16 +4,28 @@ import Image, StringIO
 
 s = socket.socket()
 s.connect(('192.168.1.2', 1212))
-s.settimeout(2)
+s.settimeout(20)
 while 1:
     s.send("a\r\n")
 
-    b = s.recv(20)
+    l = s.recv(8)
 
-    [l, b] = b.split(":")
-    print l
+    print l, 
+    
+    l = int(l)
 
-    img = s.recv(int(l))
+    img = s.recv(l)
+    
+    ll = len(img)
+
+    print ll 
+    while ll != l:
+        tmp = s.recv(128)
+        if not tmp: break
+        ll += len(tmp)
+        img += tmp
+
+    print len(img)
 
 print "finished"
 

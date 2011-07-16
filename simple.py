@@ -17,17 +17,19 @@ class Panel1(wx.Panel):
         # create the panel
         wx.Panel.__init__(self, parent, id)
         # show the bitmap, (5, 5) are upper left corner coordinates
-        self.sb = wx.StaticBitmap(self, -1, pos=(5, 5), size=(160, 120))
+        self.sb = wx.StaticBitmap(self, -1, pos=(5, 5), #size=(160, 120))
+        size=(640, 480))
         
         self.bmp = wx.Bitmap('bmp.jpg')
 
         #self.Bind(wx.EVT_PAINT, self.OnPaint)
 
 
+        self.timer = wx.Timer(self, 1001)
+        self.Bind(wx.EVT_TIMER, self.update, id=1001)
+        self.timer.Start(100)
         self.i = 0
         self.lasttime = time.time()
-        while 1:
-            self.update(None)
 
 
 
@@ -35,15 +37,20 @@ class Panel1(wx.Panel):
         #print "loading"
         s.send("a\r\n")
 
-        b = s.recv(20)
-
-        [l, b] = b.split(":")
-        #print l
+        l = s.recv(8)
+        
+        print l
 
         img = s.recv(int(l))
         img = StringIO.StringIO(img)
+        
+        try:
+            i = wx.ImageFromStream(img)
+            print i
+            self.bmp = wx.BitmapFromImage(i)
+        except:
+            return
 
-        self.bmp = wx.BitmapFromImage(wx.ImageFromStream(img))
         self.sb.SetBitmap(self.bmp)
         self.i += 1
         

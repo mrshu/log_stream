@@ -24,19 +24,40 @@ void quit(char* msg, int retval);
 
 int serversock, clientsock; 
 
+void send_img(int socket, IplImage *img)
+{
+	vector<uchar> buff;
+
+	vector<int> param = vector<int>(2);
+        param[0] = CV_IMWRITE_JPEG_QUALITY;
+        param[1] = 95;
+
+	imencode(".jpg", img, buff, param);		
+
+	char len[10];
+	sprintf(len, "%.8d", buff.size());
+	
+	// printf("%s \n", len);
+	
+	/* sending length */
+	send(socket, len, strlen(len), 0);
+	
+	/* send the image */
+	send(socket, &buff[0], buff.size(), 0);
+	buff.clear();
+
+}
+
 int main(int argc, char** argv)
 {
 	//cvNamedWindow("img", CV_WINDOW_AUTOSIZE);
 	
 	CvCapture* camera = cvCaptureFromCAM(0);
-	cvSetCaptureProperty( camera, CV_CAP_PROP_FRAME_WIDTH, 160);
-	cvSetCaptureProperty( camera, CV_CAP_PROP_FRAME_HEIGHT, 120);
+	//cvSetCaptureProperty( camera, CV_CAP_PROP_FRAME_WIDTH, 160);
+	//cvSetCaptureProperty( camera, CV_CAP_PROP_FRAME_HEIGHT, 120);
 
-	vector<uchar> buff;
-
-	
-	/* sending file */
         struct sockaddr_in server;	
+
 
         if ((serversock = socket(PF_INET, SOCK_STREAM, 0)) == -1) {             
 		quit("socket() failed", 1);
@@ -49,8 +70,7 @@ int main(int argc, char** argv)
 	server.sin_addr.s_addr = INADDR_ANY;                                    
                        
 
-	if (bind(serversock, (struct sockaddr *)&server, sizeof(struct
-	sockaddr)) == -1) {     
+	if (bind(serversock, (struct sockaddr *)&server, sizeof(server)) == -1) {     
 		quit("bind() failed", 1);                                       
 	}     
 	
@@ -73,31 +93,14 @@ int main(int argc, char** argv)
 		img = cvQueryFrame(camera);
 		if (img == NULL)
 			continue;
-		
-		vector<int> param = vector<int>(2);
-        	param[0] = CV_IMWRITE_JPEG_QUALITY;
-        	param[1] = 95;
 
-		imencode(".jpg", img, buff, param);		
-			
-		uchar recvdata[128];
 		/* read command for image sending */
+		int recvdata[128];
 		int bytes = recv(clientsock, recvdata, 128, 0);
 		
 		if (bytes > 1){
-			/* sendign length */
-			char len[20];
-			sprintf(len, "%d:", buff.size());
-			
-			send(clientsock, len, strlen(len), 0);
-			
-			/* send the image */
-			send(clientsock, &buff[0], buff.size(), 0);
-			//printf("finished\n");
+			send_img(clientsock, img);
 		}
-
-		
-		buff.clear();
 	}
 
 	close(serversock);
