@@ -8,7 +8,7 @@ import time
 
 
 s = socket.socket()
-s.connect(('192.168.1.2', 1212))
+s.connect(('192.168.1.3', 1212))
 
 
 class Panel1(wx.Panel):
@@ -27,7 +27,7 @@ class Panel1(wx.Panel):
 
         self.timer = wx.Timer(self, 1001)
         self.Bind(wx.EVT_TIMER, self.update, id=1001)
-        self.timer.Start(100)
+        self.timer.Start(1)
         self.i = 0
         self.lasttime = time.time()
 
@@ -39,14 +39,22 @@ class Panel1(wx.Panel):
 
         l = s.recv(8)
         
-        print l
+        #print l
+        l = int(l)
+        img = s.recv(l)
 
-        img = s.recv(int(l))
-        img = StringIO.StringIO(img)
+
+        ll = len(img)
+
+        while ll != l:
+            tmp = s.recv(128)
+            if not tmp: break
+            ll += len(tmp)
+            img += tmp
         
+        img = StringIO.StringIO(img)
         try:
             i = wx.ImageFromStream(img)
-            print i
             self.bmp = wx.BitmapFromImage(i)
         except:
             return
