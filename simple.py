@@ -8,7 +8,34 @@ import time
 
 
 s = socket.socket()
-s.connect(('192.168.1.3', 1212))
+s.connect(('127.0.0.1', 1212))
+
+def get_img(socket, img):
+    s.send("a\r\n")
+
+    l = s.recv(8)
+
+    #print l
+    l = int(l)
+    img = s.recv(l)
+
+
+    ll = len(img)
+
+    while ll != l:
+        tmp = s.recv(128)
+        if not tmp: break
+        ll += len(tmp)
+        img += tmp
+
+    img = StringIO.StringIO(img)
+    try:
+        i = wx.ImageFromStream(img)
+        return wx.BitmapFromImage(i)
+    except:
+        return
+
+
 
 
 class Panel1(wx.Panel):
@@ -23,7 +50,10 @@ class Panel1(wx.Panel):
         self.bmp = wx.Bitmap('bmp.jpg')
 
         #self.Bind(wx.EVT_PAINT, self.OnPaint)
-
+        
+        self.parent = parent
+        self.parent.Bind(wx.EVT_CLOSE, self.OnClose)
+        
 
         self.timer = wx.Timer(self, 1001)
         self.Bind(wx.EVT_TIMER, self.update, id=1001)
@@ -31,11 +61,14 @@ class Panel1(wx.Panel):
         self.i = 0
         self.lasttime = time.time()
 
-
+    def OnClose(self, event):
+        print "quitting"
+        s.send("q\0")
+        s.close()
+        self.parent.Destroy()
 
     def update(self, event):
-        #print "loading"
-        s.send("a\r\n")
+        s.send("img\0")
 
         l = s.recv(8)
         
@@ -73,7 +106,7 @@ class Panel1(wx.Panel):
 
 
 app = wx.PySimpleApp()
-frame1 = wx.Frame(None, -1, "Socket test", size = (400, 300))
+frame1 = wx.Frame(None, -1, "Socket test", size = (800, 600))
 Panel1(frame1, -1)
 frame1.Show(1)
 app.MainLoop()

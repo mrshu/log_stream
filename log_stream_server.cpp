@@ -95,13 +95,33 @@ int main(int argc, char** argv)
 			continue;
 
 		/* read command for image sending */
-		int recvdata[128];
+		char recvdata[128];
 		int bytes = recv(clientsock, recvdata, 128, 0);
 		
-		if (bytes > 1){
+		printf("%d\n", bytes);
+		
+		if (bytes == 0){
+			printf("Connection should be closed now\n");
+			close(clientsock);
+
+			if ((clientsock = accept(serversock, NULL, NULL)) == -1) {              
+				quit("accept() failed", 1);                                     
+			}        		
+		}
+
+		if (strcmp(recvdata, "img") == 0){
 			send_img(clientsock, img);
+		} else if (strcmp(recvdata, "q") == 0) {
+			printf("Connection should be closed now\n");
+			close(clientsock);
+
+			if ((clientsock = accept(serversock, NULL, NULL)) == -1) {              
+				quit("accept() failed", 1);                                     
+			}        		
 		}
 	}
+	
+	printf("This should not be printed\n");
 
 	close(serversock);
 	close(clientsock);
