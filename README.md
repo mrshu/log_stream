@@ -4,8 +4,7 @@ Build via
 
 	$ make
 
-then run
-
+then run -- mozno
 	$ ./log_stream_server
 
 
